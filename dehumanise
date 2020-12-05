@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage="$(basename "$0") OPTIONS <size> -- Decrypts human readable size into bytes
+
+OPTIONS:
+    -h          Show this help message
+
+FUNCTION:
+    size        Size in byte or human readable format
+"
+usage() {
+    echo "$usage"
+    exit 1
+}
+
+for option in "$@"
+do
+    case $option in
+        -h|--help) usage;;
+        -*|--*|\?) printf "illegal option: %s\n" "$option" >&2; usage;;
+    esac
+done
+
+if [ $# -ne 1 ]; then usage; fi
+
+##
+
+echo $1 | awk '{print toupper($1)}' | awk \
+    'BEGIN{IGNORECASE = 1}
+    function printpower(n,b,p) {printf "%u\n", n*b^p;}
+    /[0-9]$/{print $1;next};
+    /K(B)?$/{    printpower($1, 10,  3); next };
+    /M(B)?$/{    printpower($1, 10,  6); next };
+    /G(B)?$/{    printpower($1, 10,  9); next };
+    /T(B)?$/{    printpower($1, 10, 12); next };
+    /KI(B)?$/{printpower($1,  2, 10); next };
+    /MI(B)?$/{printpower($1,  2, 20); next };
+    /GI(B)?$/{printpower($1,  2, 30); next };
+    /TI(B)?$/{printpower($1,  2, 40); next }'
+
+exit $?
